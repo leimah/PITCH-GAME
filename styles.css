@@ -1,0 +1,194 @@
+/* Basic reset */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { height: 100%; font-family: Arial, Helvetica, sans-serif; }
+
+/* Background */
+body {
+  background: url('BB.gif') no-repeat center center fixed;
+  background-size: cover;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* total score (top-left) */
+#totalScore {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  background: rgba(0,0,0,0.45);
+  padding: 6px 10px;
+  border-radius: 6px;
+  z-index: 3000;
+  font-weight: 700;
+}
+
+/* layout of main counters */
+.main-area {
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+  padding-top: 80px;
+}
+
+/* side column */
+.side {
+  width: 180px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  user-select:none;
+}
+
+.emoji { font-size: 64px; cursor:pointer; line-height:1; }
+.label { font-size: 16px; opacity:0.9; }
+.counter {
+  font-size: 36px;
+  font-weight: 800;
+  min-height:44px;
+}
+
+/* NO counter animated class */
+.no-animated {
+  animation: noRgba 3s linear infinite;
+}
+@keyframes noRgba {
+  0% { color: rgba(255,0,0,1); }
+  25% { color: rgba(255,127,0,1); }
+  50% { color: rgba(255,255,0,1); }
+  75% { color: rgba(0,255,127,1); }
+  100% { color: rgba(127,0,255,1); }
+}
+
+/* buttons */
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn.no { background:#c23; color:white; }
+.btn.yes { background:#2a2; color:white; }
+
+/* side logs */
+.log {
+  width: 100%;
+  max-height: 160px;
+  overflow: auto;
+  background: rgba(0,0,0,0.28);
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 6px;
+  white-space: pre-line;
+}
+
+/* extras section */
+#extrasSection { max-width: 920px; margin: 26px auto 140px; text-align:center; }
+#extrasSection h2 { margin-bottom: 10px; font-size:18px; }
+
+.extras-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.extra-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px; /* reduced from 12px to 6px */
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.45);
+  border-radius: 10px;
+  font-size: 15px;
+}
+.extra-text {
+  flex: 1;
+  text-align:left;
+  word-break:break-word;
+  padding-right:5px;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 17px; /* increased font size */
+}
+
+/* extra small buttons */
+.done-btn, .skip-btn { padding:6px 10px; border-radius:8px; border:0; font-weight:700; color:#fff; cursor:pointer; }
+.done-btn { background:#228822; }
+.skip-btn { background:#444488; }
+
+/* KNNO bottom bar (on top) */
+#bottomBand {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: #060224;
+  color: white;
+  z-index: 4000;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding: 16px 10px; /* increased vertical padding from 12px to 16px */
+  font-weight:800;
+  font-size:18px;
+}
+
+/* RGBA animated KNNO text */
+.knno-animate {
+  animation: knnoRgba 4s linear infinite;
+}
+@keyframes knnoRgba {
+  0% { color: rgba(255,0,0,1); }
+  20% { color: rgba(255,127,0,1); }
+  40% { color: rgba(255,255,0,1); }
+  60% { color: rgba(0,255,127,1); }
+  80% { color: rgba(0,127,255,1); }
+  100% { color: rgba(255,0,255,1); }
+}
+
+/* full log slide-up */
+.log-menu {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 56px;
+  height: 0;
+  overflow: hidden;
+  z-index: 3900;
+  transition: height 0.33s ease;
+}
+.log-menu.open { height: 44vh; }
+.full-log {
+  background: linear-gradient(#001116cc,#000814cc);
+  color: #fff;
+  padding: 14px;
+  height: 100%;
+  overflow:auto;
+  font-family: monospace;
+  font-size: 13px;
+  white-space: pre-line;
+}
+
+/* Edit modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  z-index: 4500;
+}
+.modal[aria-hidden="false"] { display:flex; }
+.modal-content {
+  background: #111;
+  padding: 18px;
+  border-radius: 10px;
+  width: 300px;
+  text-align:center;
+}
+.modal-content input { width: 100%; padding:8px; margin-top:10px; border-radius:6px; border:0; background:#222; color:#fff; box-sizing:border-box; }
+
+/* responsive */
+@media (min-width: 900px) {
+  .extras-grid { grid-template-columns: 1fr; }
+}
