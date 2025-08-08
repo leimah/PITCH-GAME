@@ -7,7 +7,7 @@ window.extra1 = [
 "Pitch 5 back to back",
 "Stay Hydrated!",
 "Don’t break eye contact",
-"Pitch while on  call"
+"Pitch Cx on call"
 ];
 
 //THE FUNNY
