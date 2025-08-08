@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pitch Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Top-left total score -->
+  <div id="totalScore" aria-live="polite">Score: 0</div>
+
+  <!-- Main counters -->
+  <main class="main-area">
+    <section class="side" id="side-no" aria-label="No side">
+      <div class="emoji" id="noEmoji" role="button" tabindex="0" aria-label="Edit no score">❌</div>
+      <div class="label">NO</div>
+      <div class="counter" id="noCounter">0</div>
+      <button id="btnNo" class="btn no" aria-label="Add one to no">+1</button>
+      <div id="noLog" class="log" aria-live="polite" aria-atomic="false"></div>
+    </section>
+
+    <section class="side" id="side-yes" aria-label="Yes side">
+      <div class="emoji" id="yesEmoji" role="button" tabindex="0" aria-label="Edit yes score">✅</div>
+      <div class="label">YES</div>
+      <div class="counter" id="yesCounter">0</div>
+      <button id="btnYes" class="btn yes" aria-label="Add one to yes">+1</button>
+      <div id="yesLog" class="log" aria-live="polite" aria-atomic="false"></div>
+    </section>
+  </main>
+
+  <!-- Extras - always visible -->
+  <section id="extrasSection" aria-label="Extras">
+    <h2>EXTRAS</h2>
+    <div id="extrasContainer" class="extras-grid" aria-live="polite"></div>
+  </section>
+
+  <!-- Bottom KNNO bar (on top of everything) -->
+  <div id="bottomBand" role="button" tabindex="0" aria-label="Toggle full log">
+    <span id="knnoCounter">KNNO: 0</span>
+  </div>
+
+  <!-- Full log slide-up -->
+  <div id="logMenu" class="log-menu" aria-hidden="true" role="region">
+    <pre id="fullLog" class="full-log" aria-live="polite"></pre>
+  </div>
+
+  <!-- Edit popup -->
+  <div id="editModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <h3 id="editTitle">Edit Score</h3>
+      <input id="editInput" type="number" min="0" />
+      <div class="modal-buttons">
+        <button id="saveEdit" class="btn save">Save</button>
+        <button id="cancelEdit" class="btn cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preload audio tags (we create new Audio() from src for overlapping playback) -->
+  <audio id="audioScore" src="SCORE.mp3" preload="auto"></audio>
+  <audio id="audioScoreY" src="SCOREY.mp3" preload="auto"></audio>
+  <audio id="audioKnno" src="knno-sound.mp3" preload="auto"></audio>
+  <audio id="audioBosk" src="BOSK.mp3" preload="auto"></audio>
+  <audio id="audioExtraw" src="EXTRAW.mp3" preload="auto"></audio>
+
+  <!-- extras data files (must define window.extra1 / window.extra2 / window.extra3) -->
+  <script src="extra1.js"></script>
+  <script src="extra2.js"></script>
+  <script src="extra3.js"></script>
+
+  <!-- main script (deferred so extras files load first) -->
+  <script src="script.js" defer></script>
+</body>
+</html>
