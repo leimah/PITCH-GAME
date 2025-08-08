@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const audioScoreYSrc = document.getElementById('audioScoreY')?.src || 'SCOREY.mp3';
   const audioKnnoSrc = document.getElementById('audioKnno')?.src || 'knno-sound.mp3';
   const audioBoskSrc = document.getElementById('audioBosk')?.src || 'BOSK.mp3';
-  const audioExtraWSrc = 'EXTRAW.mp3'; // new done button sound
+  const audioExtraSrc = 'EXTRAW.mp3';  // added for done button sound
 
   // state
   let noCount = 0;
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else noCounterEl.classList.remove('no-animated');
 
     // bottom KNNO rgba animate always
-    bottomBand.classList.add('knno-animate');
+    document.getElementById('bottomBand').classList.add('knno-animate');
 
     const total = (noCount * 1) + (yesCount * 10) + extrasScore;
     totalScoreEl.textContent = `Score: ${total}`;
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // toggle full log when bottom bar clicked
   let logOpen = false;
-  bottomBand.addEventListener('click', () => {
+  document.getElementById('bottomBand').addEventListener('click', () => {
     logOpen = !logOpen;
     if (logOpen) {
       logMenu.classList.add('open');
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (poolKey === 1) extrasScore += 1;
         else if (poolKey === 2) extrasScore += 3;
         else if (poolKey === 3) extrasScore += 5;
-        playFresh(audioExtraWSrc);
+        playFresh(audioExtraSrc); // EXTRAW.mp3 sound on done
         refillExtraSlot(i);
         updateCounters();
       });
@@ -184,8 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
       skipBtn.className = 'skip-btn';
       skipBtn.textContent = 'skip';
       skipBtn.addEventListener('click', () => {
+        extrasScore -= 3;
+        if (extrasScore < 0) extrasScore = 0;
         playFresh(audioBoskSrc);
         refillExtraSlot(i);
+        updateCounters();
       });
 
       controls.appendChild(doneBtn);
