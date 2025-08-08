@@ -24,10 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelEditBtn = document.getElementById('cancelEdit');
 
   // audio element sources (we create new Audio() from src for overlapping playback)
-  const audioScoreSrc = document.getElementById('audioScore')?.src || 'SCORE.mp3';
-  const audioScoreYSrc = document.getElementById('audioScoreY')?.src || 'SCOREY.mp3';
+  const audioScoreSrc = document.getElementById('audioScore')?.src || 'SCORE.m4a';
+  const audioScoreYSrc = document.getElementById('audioScoreY')?.src || 'SCOREY.m4a';
   const audioKnnoSrc = document.getElementById('audioKnno')?.src || 'knno-sound.mp3';
-  const audioBoskSrc = document.getElementById('audioBosk')?.src || 'BOSK.mp3';
+  const audioBoskSrc = document.getElementById('audioBosk')?.src || 'BOSK.m4a';
   const audioExtraWSrc = 'EXTRAW.mp3'; // new done button sound
 
   // state
