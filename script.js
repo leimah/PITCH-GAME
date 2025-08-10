@@ -23,12 +23,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveEditBtn = document.getElementById('saveEdit');
   const cancelEditBtn = document.getElementById('cancelEdit');
 
+  // ULTRA KNNO overlay elements
+  const ultraKnnoOverlay = document.getElementById('ultraKnnoOverlay');
+  const ultraKnnoText = document.getElementById('ultraKnnoText');
+
   // audio element sources (we create new Audio() from src for overlapping playback)
   const audioScoreSrc = document.getElementById('audioScore')?.src || 'SCORE.mp3';
   const audioScoreYSrc = document.getElementById('audioScoreY')?.src || 'SCOREY.mp3';
   const audioKnnoSrc = document.getElementById('audioKnno')?.src || 'knno-sound.mp3';
   const audioBoskSrc = document.getElementById('audioBosk')?.src || 'BOSK.mp3';
-  const audioExtraSrc = 'EXTRAW.mp3';  // added for done button sound
+  const audioExtraSrc = 'EXTRAW.mp3';  // done button sound
+  const audioScoreTSrc = document.getElementById('audioScoreT')?.src || 'SCORET.mp3';
 
   // state
   let noCount = 0;
@@ -56,9 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // helpers
   const nowTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  function playFresh(src) {
+  function playFresh(src, volume=1) {
     try {
       const a = new Audio(src);
+      a.volume = volume;
       a.play().catch(()=>{});
     } catch(e){}
   }
@@ -79,10 +85,34 @@ document.addEventListener('DOMContentLoaded', () => {
     else noCounterEl.classList.remove('no-animated');
 
     // bottom KNNO rgba animate always
-    document.getElementById('bottomBand').classList.add('knno-animate');
+    bottomBand.classList.add('knno-animate');
 
     const total = (noCount * 1) + (yesCount * 10) + extrasScore;
     totalScoreEl.textContent = `Score: ${total}`;
+  }
+
+  // ULTRA KNNO animation function
+  function showUltraKnno() {
+    ultraKnnoOverlay.setAttribute('aria-hidden', 'false');
+    ultraKnnoOverlay.classList.add('visible');
+    ultraKnnoText.classList.add('visible');
+
+    // After 5s fade-in + 5s hold = 10s, then fade out 3s
+    setTimeout(() => {
+      ultraKnnoOverlay.style.transition = 'opacity 3s ease';
+      ultraKnnoText.style.transition = 'color 3s ease';
+
+      ultraKnnoOverlay.classList.remove('visible');
+      ultraKnnoText.classList.remove('visible');
+
+      setTimeout(() => {
+        ultraKnnoOverlay.setAttribute('aria-hidden', 'true');
+
+        // Reset transitions for next time
+        ultraKnnoOverlay.style.transition = 'opacity 5s ease';
+        ultraKnnoText.style.transition = 'color 5s ease';
+      }, 3000);
+    }, 10000);
   }
 
   // add NO
@@ -93,6 +123,33 @@ document.addEventListener('DOMContentLoaded', () => {
     if (noLog.length > SIDE_LOG_MAX) noLog.shift();
     fullLog.push({time: t, emoji: '❌'});
 
+    // Check multiples of 100 special behavior
+    if (noCount % 100 === 0) {
+      // Play SCORET.mp3 at 70% volume
+      playFresh(audioScoreTSrc, 0.7);
+
+      // Play HIGHSCORE sound 1 to 10 depending on which 100 multiple
+      const hundredIndex = noCount / 100;
+      if (hundredIndex >= 1 && hundredIndex <= 10) {
+        playFresh(`HIGHSCORE/score${hundredIndex}.mp3`);
+      }
+
+      // Show the ULTRA KNNO overlay animation
+      showUltraKnno();
+
+      // Reset NO log for this event (optional? Not in original spec)
+      noLog = [];
+
+      // Increment knnoCount
+      knnoCount++;
+
+      // Update displays and counters and exit early to skip knno 10-point sound
+      updateSideDisplays();
+      updateCounters();
+      return;
+    }
+
+    // Normal NO behavior:
     if (noCount % 10 === 0) {
       // KNNO event for NO: reset that side log (not counter), increment knno and play knno sound
       noLog = [];
@@ -132,12 +189,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // toggle full log when bottom bar clicked
   let logOpen = false;
-  document.getElementById('bottomBand').addEventListener('click', () => {
+  bottomBand.addEventListener('click', () => {
     logOpen = !logOpen;
     if (logOpen) {
       logMenu.classList.add('open');
       logMenu.setAttribute('aria-hidden','false');
-      setTimeout(()=> fullLogEl.scrollTop = fullLogEl.scrollHeight, 50);
+      setTimeout(() => fullLogEl.scrollTop = fullLogEl.scrollHeight, 50);
     } else {
       logMenu.classList.remove('open');
       logMenu.setAttribute('aria-hidden','true');
