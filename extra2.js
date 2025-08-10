@@ -8,6 +8,9 @@ window.extra2 = [
 "No SSN/ITIN | UNCTRL",
 "No payment method | UNCTRL",
 "$$$ Down payment | UNCTRL",
+"Sorry no time right now| UNCTRL",
+"I hate ATT | UNCTRL",
+"Time Waster | UNCTRL",
 ];
 
 //UNCONTROL
