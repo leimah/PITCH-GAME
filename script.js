@@ -1,4 +1,5 @@
-// main script - handles counters, logs, extras, popup editing and sounds
+// script.js - main logic for counters, logs, extras, editing, sounds, coins
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // elements
@@ -9,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const noLogEl = document.getElementById('noLog');
   const yesLogEl = document.getElementById('yesLog');
   const totalScoreEl = document.getElementById('totalScore');
+  const coinsCountEl = document.getElementById('coinsCount');
 
   const bottomBand = document.getElementById('bottomBand');
   const knnoCounterText = document.getElementById('knnoCounter');
@@ -27,12 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const ultraKnnoOverlay = document.getElementById('ultraKnnoOverlay');
   const ultraKnnoText = document.getElementById('ultraKnnoText');
 
-  // audio element sources (we create new Audio() from src for overlapping playback)
+  // audio sources (we create new Audio() from src for overlapping playback)
   const audioScoreSrc = document.getElementById('audioScore')?.src || 'SCORE.mp3';
   const audioScoreYSrc = document.getElementById('audioScoreY')?.src || 'SCOREY.mp3';
   const audioKnnoSrc = document.getElementById('audioKnno')?.src || 'knno-sound.mp3';
   const audioBoskSrc = document.getElementById('audioBosk')?.src || 'BOSK.mp3';
-  const audioExtraSrc = 'EXTRAW.mp3';  // done button sound
+  const audioExtraSrc = document.getElementById('audioExtraw')?.src || 'EXTRAW.mp3';
   const audioScoreTSrc = document.getElementById('audioScoreT')?.src || 'SCORET.mp3';
 
   // state
@@ -40,14 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let yesCount = 0;
   let knnoCount = 0;
   let extrasScore = 0;
+  let coins = 0;
 
-  let noLog = [];   // store time strings
+  let noLog = [];
   let yesLog = [];
-  let fullLog = []; // {time, emoji}
+  let fullLog = [];
 
   const SIDE_LOG_MAX = 50;
 
-  // extras pools read from window.extra1/extra2/extra3 (infinite random picks)
+  // extras pools read from window.extra1/extra2/extra3
   const pools = {
     1: Array.isArray(window.extra1) ? window.extra1.slice() : [],
     2: Array.isArray(window.extra2) ? window.extra2.slice() : [],
@@ -55,18 +58,28 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // map slot -> pool key
-  const extrasSlots = [1,1,2,2,3];
+  const extrasSlots = [1, 1, 2, 2, 3]; // initial 5 slots
   let displayedExtras = new Array(5).fill(null);
   let extrasSlotEls = new Array(5).fill(null);
 
+  // purchased modifiers state (updated from shop.js events)
+  const modifiers = {
+    scoreMultiplierActive: false,
+    scoreMultiplierEnd: 0,
+    noPenaltiesActive: false,
+    noPenaltiesEnd: 0,
+    extraSlotActive: false
+  };
+
   // helpers
   const nowTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   function playFresh(src, volume=1) {
     try {
       const a = new Audio(src);
       a.volume = volume;
-      a.play().catch(()=>{});
-    } catch(e){}
+      a.play().catch(() => {});
+    } catch (e) {}
   }
 
   function updateSideDisplays() {
@@ -80,24 +93,24 @@ document.addEventListener('DOMContentLoaded', () => {
     yesCounterEl.textContent = yesCount;
     knnoCounterText.textContent = `KNNO: ${knnoCount}`;
 
-    // NO animated rgba if > 100
     if (noCount > 100) noCounterEl.classList.add('no-animated');
     else noCounterEl.classList.remove('no-animated');
 
-    // bottom KNNO rgba animate always
     bottomBand.classList.add('knno-animate');
 
-    const total = (noCount * 1) + (yesCount * 10) + extrasScore;
+    const baseScore = (noCount * 1) + (yesCount * 10) + extrasScore;
+    const total = modifiers.scoreMultiplierActive ? baseScore * 2 : baseScore;
+
     totalScoreEl.textContent = `Score: ${total}`;
+    coinsCountEl.textContent = `Coins: ${coins}`;
   }
 
-  // ULTRA KNNO animation function
+  // ULTRA KNNO animation
   function showUltraKnno() {
     ultraKnnoOverlay.setAttribute('aria-hidden', 'false');
     ultraKnnoOverlay.classList.add('visible');
     ultraKnnoText.classList.add('visible');
 
-    // After 5s fade-in + 5s hold = 10s, then fade out 3s
     setTimeout(() => {
       ultraKnnoOverlay.style.transition = 'opacity 3s ease';
       ultraKnnoText.style.transition = 'color 3s ease';
@@ -107,54 +120,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
       setTimeout(() => {
         ultraKnnoOverlay.setAttribute('aria-hidden', 'true');
-
-        // Reset transitions for next time
         ultraKnnoOverlay.style.transition = 'opacity 5s ease';
         ultraKnnoText.style.transition = 'color 5s ease';
       }, 3000);
     }, 10000);
   }
 
+  // Coins awarding helper
+  function awardCoins(amount) {
+    coins += amount;
+    if (coins < 0) coins = 0;
+  }
+
   // add NO
   function addNo() {
     noCount++;
     const t = nowTime();
+
+    if (!modifiers.noPenaltiesActive) {
+      // normal penalty behavior (if any)
+    }
+
     noLog.push(`${t} ❌`);
     if (noLog.length > SIDE_LOG_MAX) noLog.shift();
-    fullLog.push({time: t, emoji: '❌'});
+    fullLog.push({ time: t, emoji: '❌' });
 
-    // Check multiples of 100 special behavior
+    // Award 1 coin per NO
+    awardCoins(1);
+
     if (noCount % 100 === 0) {
-      // Play SCORET.mp3 at 70% volume
       playFresh(audioScoreTSrc, 0.7);
-
-      // Play HIGHSCORE sound 1 to 10 depending on which 100 multiple
       const hundredIndex = noCount / 100;
       if (hundredIndex >= 1 && hundredIndex <= 10) {
         playFresh(`HIGHSCORE/score${hundredIndex}.mp3`);
       }
-
-      // Show the ULTRA KNNO overlay animation
       showUltraKnno();
-
-      // Reset NO log for this event (optional? Not in original spec)
       noLog = [];
-
-      // Increment knnoCount
       knnoCount++;
-
-      // Update displays and counters and exit early to skip knno 10-point sound
+      awardCoins(5); // Ultra KNNO coin bonus
       updateSideDisplays();
       updateCounters();
       return;
     }
 
-    // Normal NO behavior:
     if (noCount % 10 === 0) {
-      // KNNO event for NO: reset that side log (not counter), increment knno and play knno sound
       noLog = [];
       knnoCount++;
       playFresh(audioKnnoSrc);
+      awardCoins(1); // KNNO coin bonus
     } else {
       playFresh(audioScoreSrc);
     }
@@ -169,12 +182,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const t = nowTime();
     yesLog.push(`${t} ✅`);
     if (yesLog.length > SIDE_LOG_MAX) yesLog.shift();
-    fullLog.push({time: t, emoji: '✅'});
+    fullLog.push({ time: t, emoji: '✅' });
+
+    // Award 10 coins per YES
+    awardCoins(10);
 
     if (yesCount % 10 === 0) {
       yesLog = [];
       knnoCount++;
       playFresh(audioKnnoSrc);
+      awardCoins(1);
     } else {
       playFresh(audioScoreYSrc);
     }
@@ -187,21 +204,21 @@ document.addEventListener('DOMContentLoaded', () => {
   btnNo.addEventListener('click', addNo);
   btnYes.addEventListener('click', addYes);
 
-  // toggle full log when bottom bar clicked
+  // toggle full log
   let logOpen = false;
   bottomBand.addEventListener('click', () => {
     logOpen = !logOpen;
     if (logOpen) {
       logMenu.classList.add('open');
-      logMenu.setAttribute('aria-hidden','false');
+      logMenu.setAttribute('aria-hidden', 'false');
       setTimeout(() => fullLogEl.scrollTop = fullLogEl.scrollHeight, 50);
     } else {
       logMenu.classList.remove('open');
-      logMenu.setAttribute('aria-hidden','true');
+      logMenu.setAttribute('aria-hidden', 'true');
     }
   });
 
-  // --- EXTRAS UI (5 visible slots) ---
+  // EXTRAS UI
   function getRandomFromPool(poolKey) {
     const arr = pools[poolKey];
     if (!Array.isArray(arr) || arr.length === 0) return null;
@@ -210,7 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function createExtrasUI() {
     extrasContainer.innerHTML = '';
-    for (let i=0; i<5; i++) {
+    // FIXED: Use extrasSlots.length so all slots (including added #6) render
+    for (let i = 0; i < extrasSlots.length; i++) {
       const wrapper = document.createElement('div');
       wrapper.className = 'extra-item';
 
@@ -227,12 +245,12 @@ document.addEventListener('DOMContentLoaded', () => {
       doneBtn.textContent = 'done';
       doneBtn.addEventListener('click', () => {
         if (!displayedExtras[i]) return;
-        // award points by pool
         const poolKey = extrasSlots[i];
         if (poolKey === 1) extrasScore += 1;
         else if (poolKey === 2) extrasScore += 3;
         else if (poolKey === 3) extrasScore += 5;
-        playFresh(audioExtraSrc); // EXTRAW.mp3 sound on done
+        awardCoins(poolKey === 3 ? 3 : 1);
+        playFresh(audioExtraSrc);
         refillExtraSlot(i);
         updateCounters();
       });
@@ -241,8 +259,10 @@ document.addEventListener('DOMContentLoaded', () => {
       skipBtn.className = 'skip-btn';
       skipBtn.textContent = 'skip';
       skipBtn.addEventListener('click', () => {
-        extrasScore -= 3;
-        if (extrasScore < 0) extrasScore = 0;
+        if (!modifiers.noPenaltiesActive) {
+          extrasScore -= 3;
+          if (extrasScore < 0) extrasScore = 0;
+        }
         playFresh(audioBoskSrc);
         refillExtraSlot(i);
         updateCounters();
@@ -263,38 +283,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const poolKey = extrasSlots[i];
     const pick = getRandomFromPool(poolKey);
     displayedExtras[i] = pick ? pick : 'No extras loaded.';
-    // update DOM text for only this slot
     const wrapper = extrasSlotEls[i];
     if (wrapper) wrapper.querySelector('.extra-text').textContent = displayedExtras[i];
   }
 
   function initExtras() {
-    // refresh pools from window extras (in case files changed)
     pools[1] = Array.isArray(window.extra1) ? window.extra1.slice() : [];
     pools[2] = Array.isArray(window.extra2) ? window.extra2.slice() : [];
     pools[3] = Array.isArray(window.extra3) ? window.extra3.slice() : [];
 
-    // initial picks
     createExtrasUI();
-    for (let i=0;i<5;i++) refillExtraSlot(i);
+    for (let i = 0; i < extrasSlots.length; i++) refillExtraSlot(i);
     updateCounters();
   }
 
-  // --- Edit popup (emoji click) ---
-  let editing = null; // 'no' or 'yes'
+  // Edit popup logic
+  let editing = null;
   const yesEmoji = document.getElementById('yesEmoji');
   const noEmoji = document.getElementById('noEmoji');
 
   function openEdit(type) {
     editing = type;
-    editModal.setAttribute('aria-hidden','false');
+    editModal.setAttribute('aria-hidden', 'false');
     editInput.value = (type === 'no') ? noCount : yesCount;
     editTitle.textContent = `Edit ${type.toUpperCase()} score`;
     editInput.focus();
     editInput.select();
   }
   function closeEdit() {
-    editModal.setAttribute('aria-hidden','true');
+    editModal.setAttribute('aria-hidden', 'true');
     editing = null;
   }
   saveEditBtn.addEventListener('click', () => {
@@ -308,13 +325,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   cancelEditBtn.addEventListener('click', closeEdit);
 
-  // click handlers on emojis (keyboard accessible)
   yesEmoji.addEventListener('click', () => openEdit('yes'));
   noEmoji.addEventListener('click', () => openEdit('no'));
   yesEmoji.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit('yes'); }});
   noEmoji.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit('no'); }});
 
-  // close modal on Escape or outside click
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeEdit();
   });
@@ -322,11 +337,89 @@ document.addEventListener('DOMContentLoaded', () => {
     if (evt.target === editModal) closeEdit();
   });
 
-  // init everything
+  // Periodic check to disable modifiers if expired
+  function checkModifiers() {
+    const now = Date.now();
+    if (modifiers.scoreMultiplierActive && now > modifiers.scoreMultiplierEnd) {
+      modifiers.scoreMultiplierActive = false;
+      updateCounters();
+    }
+    if (modifiers.noPenaltiesActive && now > modifiers.noPenaltiesEnd) {
+      modifiers.noPenaltiesActive = false;
+    }
+  }
+
+  // Expose functions to be called from shop.js
+  window.pitchTracker = {
+    initExtras,
+    refillExtraSlot,
+    updateCounters,
+    awardCoins,
+    addCoins: awardCoins,
+    getState: () => ({
+      noCount, yesCount, knnoCount, extrasScore, coins, displayedExtras,
+      modifiers
+    }),
+    activateScoreMultiplier(durationMs) {
+      modifiers.scoreMultiplierActive = true;
+      modifiers.scoreMultiplierEnd = Date.now() + durationMs;
+      updateCounters();
+    },
+    activateNoPenalties(durationMs) {
+      modifiers.noPenaltiesActive = true;
+      modifiers.noPenaltiesEnd = Date.now() + durationMs;
+    },
+    activateExtraSlot() {
+      if (!modifiers.extraSlotActive) {
+        modifiers.extraSlotActive = true;
+        extrasSlots.push(2); // add one more slot from pool 2
+        displayedExtras.push(null);
+        extrasSlotEls.push(null);
+        createExtrasUI();
+        refillExtraSlot(extrasSlots.length - 1);
+        updateCounters();
+      }
+    }
+  };
+
+  // SHOP button and side menu logic (updated for new HTML structure)
+  const shopButton = document.querySelector('.shop-button');
+  const shopSideMenu = document.getElementById('shopSideMenu');
+
+  let shopOpen = false;
+
+  function openShop() {
+    shopSideMenu.classList.add('open');
+    shopOpen = true;
+  }
+
+  function closeShop() {
+    shopSideMenu.classList.remove('open');
+    shopOpen = false;
+  }
+
+  shopButton.addEventListener('click', () => {
+    if (shopOpen) {
+      closeShop();
+    } else {
+      openShop();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!shopOpen) return;
+    if (!shopSideMenu.contains(e.target) && e.target !== shopButton) {
+      closeShop();
+    }
+  });
+
+  // Initialization
   initExtras();
   updateSideDisplays();
   updateCounters();
 
-  // expose debug
-  window.pitchTracker = { initExtras, refillExtraSlot, getState: () => ({noCount,yesCount,knnoCount,extrasScore,displayedExtras}) };
+  // Check modifiers every second
+  setInterval(() => {
+    checkModifiers();
+  }, 1000);
 });
