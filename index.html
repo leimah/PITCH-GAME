@@ -11,6 +11,9 @@
   <!-- Top-left total score -->
   <div id="totalScore" aria-live="polite">Score: 0</div>
 
+  <!-- Coins count below total score -->
+  <div id="coinsCount" aria-live="polite">Coins: 0</div>
+
   <!-- Main counters -->
   <main class="main-area">
     <section class="side" id="side-no" aria-label="No side">
@@ -30,13 +33,19 @@
     </section>
   </main>
 
-  <!-- Extras - always visible -->
+  <!-- Extras section -->
   <section id="extrasSection" aria-label="Extras">
     <h2>EXTRAS</h2>
     <div id="extrasContainer" class="extras-grid" aria-live="polite"></div>
   </section>
 
-  <!-- Bottom KNNO bar (on top of everything) -->
+  <!-- Shop button in top-right corner -->
+  <button id="shopButton" class="shop-button" aria-label="Open shop">🪙 SHOP</button>
+
+  <!-- Shop side menu (hidden by default) -->
+  <div id="shopSideMenu" class="shop-menu" aria-hidden="true"></div>
+
+  <!-- Bottom KNNO bar -->
   <div id="bottomBand" role="button" tabindex="0" aria-label="Toggle full log">
     <span id="knnoCounter">KNNO: 0</span>
   </div>
@@ -44,6 +53,7 @@
   <!-- Full log slide-up -->
   <div id="logMenu" class="log-menu" aria-hidden="true" role="region">
     <pre id="fullLog" class="full-log" aria-live="polite"></pre>
+    <div id="logVersion" style="color:#aaa; font-size:12px; margin-top:6px;">version ALPHA</div>
   </div>
 
   <!-- Edit popup -->
@@ -63,7 +73,7 @@
     <div id="ultraKnnoText">ULTRA KNNO</div>
   </div>
 
-  <!-- Preload audio tags (we create new Audio() from src for overlapping playback) -->
+  <!-- Preload audio -->
   <audio id="audioScore" src="SCORE.mp3" preload="auto"></audio>
   <audio id="audioScoreY" src="SCOREY.mp3" preload="auto"></audio>
   <audio id="audioKnno" src="knno-sound.mp3" preload="auto"></audio>
@@ -71,12 +81,14 @@
   <audio id="audioExtraw" src="EXTRAW.mp3" preload="auto"></audio>
   <audio id="audioScoreT" src="SCORET.mp3" preload="auto"></audio>
 
-  <!-- extras data files (must define window.extra1 / window.extra2 / window.extra3) -->
+  <!-- extras data -->
   <script src="extra1.js"></script>
   <script src="extra2.js"></script>
   <script src="extra3.js"></script>
 
-  <!-- main script (deferred so extras files load first) -->
+  <!-- main script -->
   <script src="script.js" defer></script>
+  <!-- shop script -->
+  <script src="shop.js" defer></script>
 </body>
 </html>
