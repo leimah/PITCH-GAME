@@ -192,3 +192,30 @@ body {
 @media (min-width: 900px) {
   .extras-grid { grid-template-columns: 1fr; }
 }
+
+/* ULTRA KNNO overlay */
+#ultraKnnoOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 5s ease;
+}
+#ultraKnnoOverlay.visible {
+  opacity: 1;
+  background: rgba(0,0,0,0.5);
+}
+#ultraKnnoText {
+  color: rgba(255,255,255,0);
+  font-size: 4rem;
+  font-weight: 900;
+  transition: color 5s ease;
+}
+#ultraKnnoText.visible {
+  color: rgba(255,255,255,1);
+}
