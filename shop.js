@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       id: 'scoreMultiplier',
       name: 'Score multiplier',
-      description: 'Gain 2x score (cooldown 10min)',
+      description: 'Double your score by 2x (cooldown 10min)',
       price: 100,
       durationMs: 10 * 60 * 1000, // 10 minutes
       buyAction() {
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       id: 'noPenalties',
       name: 'No penalties',
-      description: 'Avoid all skip penalties for 5 minutes',
+      description: 'Avoid all skip penalties for 5 minutes (skips gets -3)',
       price: 200,
       durationMs: 5 * 60 * 1000, // 5 minutes
       buyAction() {
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       id: 'extraSlot',
       name: 'Extra slot',
-      description: 'Gets you another UNCTRL slot',
+      description: 'Gets you another UNCTRL slot (one time use)',
       price: 75,
       buyAction() {
         window.pitchTracker.activateExtraSlot();
