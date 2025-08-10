@@ -7,10 +7,10 @@ window.extra3 = [
 "FAMILY GUY: sign up a whole family | 🏆",
 "Actually, get me a phone: Cx swaps BYOD for Installment | 🏆",
 "FINANCIALLY BROKEN: Cx missing payment method | 🏆",
-"THANKS TPV, THANKS: Get rejected by TPV | 🏆"
-"SOFT TO HARD: Get a credit verification | 🏆"
-"THE MAN HIMSELF: Get a visit from Ray | 🏆"
-"FIBER? FIBER? AGAIN?: Just sell fiber for a day | 🏆"
+"THANKS TPV, THANKS: Get rejected by TPV | 🏆",
+"SOFT TO HARD: Get a credit verification | 🏆",
+"THE MAN HIMSELF: Get a visit from Ray | 🏆",
+"FIBER? FIBER? AGAIN?: Just sell fiber for a day | 🏆",
 "HIM-ENEZ: Beat Kevin in sales | 🏆"
 ];
 
