@@ -10,7 +10,10 @@ window.extra2 = [
 "$$$ Down payment | UNCTRL",
 "Sorry no time right now| UNCTRL",
 "I hate ATT | UNCTRL",
-"Time Waster | UNCTRL",
+"Pro Time Waster | UNCTRL",
+"Answer from too far way | UNCTRL",
+"My [family] pays for it | UNCTRL",
+"On a Call | UNCTRL"
 ];
 
 //UNCONTROL
