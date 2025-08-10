@@ -4,7 +4,7 @@ html,body { height: 100%; font-family: Arial, Helvetica, sans-serif; }
 
 /* Background */
 body {
-  background: url('IMG_0080.gif') no-repeat center center fixed;
+  background: url('BB.gif') no-repeat center center fixed;
   background-size: cover;
   color: #fff;
   -webkit-font-smoothing: antialiased;
