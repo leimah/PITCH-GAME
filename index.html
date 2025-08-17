@@ -1,94 +1,68 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pitch Tracker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Progress Bar Pitch</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-
-  <!-- Top-left total score -->
-  <div id="totalScore" aria-live="polite">Score: 0</div>
-
-  <!-- Coins count below total score -->
-  <div id="coinsCount" aria-live="polite">Coins: 0</div>
-
-  <!-- Main counters -->
-  <main class="main-area">
-    <section class="side" id="side-no" aria-label="No side">
-      <div class="emoji" id="noEmoji" role="button" tabindex="0" aria-label="Edit no score">❌</div>
-      <div class="label">NO</div>
-      <div class="counter" id="noCounter">0</div>
-      <button id="btnNo" class="btn no" aria-label="Add one to no">+1</button>
-      <div id="noLog" class="log" aria-live="polite" aria-atomic="false"></div>
-    </section>
-
-    <section class="side" id="side-yes" aria-label="Yes side">
-      <div class="emoji" id="yesEmoji" role="button" tabindex="0" aria-label="Edit yes score">✅</div>
-      <div class="label">YES</div>
-      <div class="counter" id="yesCounter">0</div>
-      <button id="btnYes" class="btn yes" aria-label="Add one to yes">+1</button>
-      <div id="yesLog" class="log" aria-live="polite" aria-atomic="false"></div>
-    </section>
-  </main>
-
-  <!-- Extras section -->
-  <section id="extrasSection" aria-label="Extras">
-    <h2>EXTRAS</h2>
-    <div id="extrasContainer" class="extras-grid" aria-live="polite"></div>
-  </section>
-
-  <!-- Shop button in top-right corner -->
-  <button id="shopButton" class="shop-button" aria-label="Open shop">🪙 SHOP</button>
-
-  <!-- Shop side menu (hidden by default) -->
-  <div id="shopSideMenu" class="shop-menu" aria-hidden="true"></div>
-
-  <!-- Bottom KNNO bar -->
-  <div id="bottomBand" role="button" tabindex="0" aria-label="Toggle full log">
-    <span id="knnoCounter">KNNO: 0</span>
+  <div id="counters">
+    <div id="score-counter">SCORE: 0</div>
+    <div id="loop-counter">LOOP: 0</div>
   </div>
 
-  <!-- Full log slide-up -->
-  <div id="logMenu" class="log-menu" aria-hidden="true" role="region">
-    <pre id="fullLog" class="full-log" aria-live="polite"></pre>
-    <div id="logVersion" style="color:#aaa; font-size:12px; margin-top:6px;">version ALPHA</div>
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+    <span id="combo-text"></span>
   </div>
 
-  <!-- Edit popup -->
-  <div id="editModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true">
-    <div class="modal-content">
-      <h3 id="editTitle">Edit Score</h3>
-      <input id="editInput" type="number" min="0" />
-      <div class="modal-buttons">
-        <button id="saveEdit" class="btn save">Save</button>
-        <button id="cancelEdit" class="btn cancel">Cancel</button>
-      </div>
+  <div id="buttons">
+    <div class="pitch-row">
+      <button id="pitch-btn">PITCH</button>
+    </div>
+    <div class="sbs-container">
+      <button id="sbs-btn">SbS</button>
+      <button id="dismiss-btn">DISMISS</button>
     </div>
   </div>
 
-  <!-- ULTRA KNNO overlay -->
-  <div id="ultraKnnoOverlay" aria-hidden="true">
-    <div id="ultraKnnoText">ULTRA KNNO</div>
+  <div id="countdown"></div>
+
+  <div id="power-unlock-container">
+    <div id="power-title">OBJECTS OF POWER</div>
+    <button id="power-btn">💿</button>
   </div>
 
-  <!-- Preload audio -->
-  <audio id="audioScore" src="SCORE.mp3" preload="auto"></audio>
-  <audio id="audioScoreY" src="SCOREY.mp3" preload="auto"></audio>
-  <audio id="audioKnno" src="knno-sound.mp3" preload="auto"></audio>
-  <audio id="audioBosk" src="BOSK.mp3" preload="auto"></audio>
-  <audio id="audioExtraw" src="EXTRAW.mp3" preload="auto"></audio>
-  <audio id="audioScoreT" src="SCORET.mp3" preload="auto"></audio>
+  <div id="power-panel-overlay"></div>
+  <div id="power-panel">
+    <div id="power-items">
+      <div class="power-item">💽 POWER 1</div>
+      <div class="power-item">💽 POWER 2</div>
+      <div class="power-item">💽 POWER 3</div>
+      <div class="power-item">💽 POWER 4</div>
+      <div class="power-item">💽 POWER 5</div>
+    </div>
+    <button id="power-commit-btn">COMMIT 1</button>
+  </div>
 
-  <!-- extras data -->
-  <script src="extra1.js"></script>
-  <script src="extra2.js"></script>
-  <script src="extra3.js"></script>
+  <!-- EVENTS button -->
+  <button id="events-btn">EVENTS</button>
 
-  <!-- main script -->
-  <script src="script.js" defer></script>
-  <!-- shop script -->
-  <script src="shop.js" defer></script>
+  <!-- EVENTS panel -->
+  <div id="events-panel">
+    <h2>Events</h2>
+    <ul id="events-list"></ul>
+  </div>
+
+  <!-- RESET button -->
+  <button id="reset-btn">RESET</button>
+
+  <audio id="score-audio" src="SCORE.mp3"></audio>
+  <audio id="scorey-audio" src="SCOREY.mp3"></audio>
+  <audio id="roulette-audio" src="ROULETTE.mp3"></audio>
+
+  <script src="LIST.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
