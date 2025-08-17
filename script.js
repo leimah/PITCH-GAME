@@ -1,425 +1,416 @@
-// script.js - main logic for counters, logs, extras, editing, sounds, coins
+// --- DOM refs ---
+const progressBar = document.getElementById('progress-bar');
+const pitchBtn = document.getElementById('pitch-btn');
+const sbsBtn = document.getElementById('sbs-btn');
+const dismissBtn = document.getElementById('dismiss-btn');
+const countdown = document.getElementById('countdown');
+const scoreCounter = document.getElementById('score-counter');
+const loopCounter = document.getElementById('loop-counter');
+const comboText = document.getElementById('combo-text');
+const buttonsContainer = document.getElementById('buttons');
 
-document.addEventListener('DOMContentLoaded', () => {
+const powerBtn = document.getElementById("power-btn");
+const powerTitle = document.getElementById("power-title");
+const powerPanel = document.getElementById("power-panel");
+const powerOverlay = document.getElementById("power-panel-overlay");
+const powerItems = document.querySelectorAll(".power-item");
+const commitBtn = document.getElementById("power-commit-btn");
+const rouletteAudio = document.getElementById('roulette-audio');
 
-  // elements
-  const btnNo = document.getElementById('btnNo');
-  const btnYes = document.getElementById('btnYes');
-  const noCounterEl = document.getElementById('noCounter');
-  const yesCounterEl = document.getElementById('yesCounter');
-  const noLogEl = document.getElementById('noLog');
-  const yesLogEl = document.getElementById('yesLog');
-  const totalScoreEl = document.getElementById('totalScore');
-  const coinsCountEl = document.getElementById('coinsCount');
+const resetBtn = document.getElementById('reset-btn');
+const eventsBtn = document.getElementById('events-btn');
+const eventsPanel = document.getElementById('events-panel');
+const eventsList = document.getElementById('events-list');
 
-  const bottomBand = document.getElementById('bottomBand');
-  const knnoCounterText = document.getElementById('knnoCounter');
-  const logMenu = document.getElementById('logMenu');
-  const fullLogEl = document.getElementById('fullLog');
+// --- Timing / config ---
+const pitchDuration = 20000; // 20s to empty
+const yesCooldown = 10000;   // 10s freeze after clicking YES
+const countdownStartSeconds = 6;
+const countdownCyclesMax = 5;
+const comboTimeout = 5000;   // 5s window for combos
+const comboMax = 10;
+const POWER_COST = 1;
 
-  const extrasContainer = document.getElementById('extrasContainer');
+// --- State ---
+let startTime = null;
+let animationFrameId = null;
+let paused = false;
+let pausedAt = 0;
 
-  const editModal = document.getElementById('editModal');
-  const editInput = document.getElementById('editInput');
-  const editTitle = document.getElementById('editTitle');
-  const saveEditBtn = document.getElementById('saveEdit');
-  const cancelEditBtn = document.getElementById('cancelEdit');
+let yesActive = false;
+let yesTimeoutId = null;
 
-  // ULTRA KNNO overlay elements
-  const ultraKnnoOverlay = document.getElementById('ultraKnnoOverlay');
-  const ultraKnnoText = document.getElementById('ultraKnnoText');
+let score = 0;
+let loop = 0;
+let obtainedItems = [];
+let rouletteRunning = false;
 
-  // audio sources (we create new Audio() from src for overlapping playback)
-  const audioScoreSrc = document.getElementById('audioScore')?.src || 'SCORE.mp3';
-  const audioScoreYSrc = document.getElementById('audioScoreY')?.src || 'SCOREY.mp3';
-  const audioKnnoSrc = document.getElementById('audioKnno')?.src || 'knno-sound.mp3';
-  const audioBoskSrc = document.getElementById('audioBosk')?.src || 'BOSK.mp3';
-  const audioExtraSrc = document.getElementById('audioExtraw')?.src || 'EXTRAW.mp3';
-  const audioScoreTSrc = document.getElementById('audioScoreT')?.src || 'SCORET.mp3';
+let countdownCycle = 0;
+let countdownInterval = null;
 
-  // state
-  let noCount = 0;
-  let yesCount = 0;
-  let knnoCount = 0;
-  let extrasScore = 0;
-  let coins = 0;
+// Combo state
+let comboCount = 0;
+let comboTimer = null;
 
-  let noLog = [];
-  let yesLog = [];
-  let fullLog = [];
+// Pitch click counter for loop increment
+let pitchClicks = 0;
 
-  const SIDE_LOG_MAX = 50;
+// Events state
+let events = [];
 
-  // extras pools read from window.extra1/extra2/extra3
-  const pools = {
-    1: Array.isArray(window.extra1) ? window.extra1.slice() : [],
-    2: Array.isArray(window.extra2) ? window.extra2.slice() : [],
-    3: Array.isArray(window.extra3) ? window.extra3.slice() : []
-  };
+// --- Helpers ---
+function updateCounters() {
+  scoreCounter.textContent = `SCORE: ${score}`;
+  loopCounter.textContent = `LOOP: ${loop}`;
 
-  // map slot -> pool key
-  const extrasSlots = [1, 1, 2, 2, 3]; // initial 5 slots
-  let displayedExtras = new Array(5).fill(null);
-  let extrasSlotEls = new Array(5).fill(null);
-
-  // purchased modifiers state (updated from shop.js events)
-  const modifiers = {
-    scoreMultiplierActive: false,
-    scoreMultiplierEnd: 0,
-    noPenaltiesActive: false,
-    noPenaltiesEnd: 0,
-    extraSlotActive: false
-  };
-
-  // helpers
-  const nowTime = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  function playFresh(src, volume=1) {
-    try {
-      const a = new Audio(src);
-      a.volume = volume;
-      a.play().catch(() => {});
-    } catch (e) {}
-  }
-
-  function updateSideDisplays() {
-    noLogEl.textContent = noLog.join('\n');
-    yesLogEl.textContent = yesLog.join('\n');
-    fullLogEl.textContent = fullLog.map(e => `${e.time} ${e.emoji}`).join('\n');
-  }
-
-  function updateCounters() {
-    noCounterEl.textContent = noCount;
-    yesCounterEl.textContent = yesCount;
-    knnoCounterText.textContent = `KNNO: ${knnoCount}`;
-
-    if (noCount > 100) noCounterEl.classList.add('no-animated');
-    else noCounterEl.classList.remove('no-animated');
-
-    bottomBand.classList.add('knno-animate');
-
-    const baseScore = (noCount * 1) + (yesCount * 10) + extrasScore;
-    const total = modifiers.scoreMultiplierActive ? baseScore * 2 : baseScore;
-
-    totalScoreEl.textContent = `Score: ${total}`;
-    coinsCountEl.textContent = `Coins: ${coins}`;
-  }
-
-  // ULTRA KNNO animation
-  function showUltraKnno() {
-    ultraKnnoOverlay.setAttribute('aria-hidden', 'false');
-    ultraKnnoOverlay.classList.add('visible');
-    ultraKnnoText.classList.add('visible');
-
-    setTimeout(() => {
-      ultraKnnoOverlay.style.transition = 'opacity 3s ease';
-      ultraKnnoText.style.transition = 'color 3s ease';
-
-      ultraKnnoOverlay.classList.remove('visible');
-      ultraKnnoText.classList.remove('visible');
-
-      setTimeout(() => {
-        ultraKnnoOverlay.setAttribute('aria-hidden', 'true');
-        ultraKnnoOverlay.style.transition = 'opacity 5s ease';
-        ultraKnnoText.style.transition = 'color 5s ease';
-      }, 3000);
-    }, 10000);
-  }
-
-  // Coins awarding helper
-  function awardCoins(amount) {
-    coins += amount;
-    if (coins < 0) coins = 0;
-  }
-
-  // add NO
-  function addNo() {
-    noCount++;
-    const t = nowTime();
-
-    if (!modifiers.noPenaltiesActive) {
-      // normal penalty behavior (if any)
+  // POWER button threshold
+  if (loop >= POWER_COST) {
+    if (!powerBtn.classList.contains("active")) {
+      powerBtn.classList.add("active");
+      powerTitle.classList.add("active");
+      playOnce('POWER.mp3');
     }
+  }
+}
 
-    noLog.push(`${t} ❌`);
-    if (noLog.length > SIDE_LOG_MAX) noLog.shift();
-    fullLog.push({ time: t, emoji: '❌' });
+function addScore(delta) {
+  score += delta;
+  if (score < 0) score = 0;
+  updateCounters();
+}
 
-    // Award 1 coin per NO
-    awardCoins(1);
-
-    if (noCount % 100 === 0) {
-      playFresh(audioScoreTSrc, 0.7);
-      const hundredIndex = noCount / 100;
-      if (hundredIndex >= 1 && hundredIndex <= 10) {
-        playFresh(`HIGHSCORE/score${hundredIndex}.mp3`);
-      }
-      showUltraKnno();
-      noLog = [];
-      knnoCount++;
-      awardCoins(5); // Ultra KNNO coin bonus
-      updateSideDisplays();
-      updateCounters();
-      return;
-    }
-
-    if (noCount % 10 === 0) {
-      noLog = [];
-      knnoCount++;
-      playFresh(audioKnnoSrc);
-      awardCoins(1); // KNNO coin bonus
-    } else {
-      playFresh(audioScoreSrc);
-    }
-
-    updateSideDisplays();
+function maybeAddLoop() {
+  pitchClicks++;
+  if (pitchClicks % 10 === 0) {
+    loop++;
     updateCounters();
   }
+}
 
-  // add YES
-  function addYes() {
-    yesCount++;
-    const t = nowTime();
-    yesLog.push(`${t} ✅`);
-    if (yesLog.length > SIDE_LOG_MAX) yesLog.shift();
-    fullLog.push({ time: t, emoji: '✅' });
+function playOnce(src) {
+  try {
+    const a = new Audio(src);
+    a.play();
+  } catch (e) {}
+}
 
-    // Award 10 coins per YES
-    awardCoins(10);
+function scoreSfxForCombo(n) {
+  if (n >= 10) return 'SCORE10.mp3';
+  if (n >= 7) return 'SCORE7.mp3';
+  if (n >= 5) return 'SCORE5.mp3';
+  if (n >= 2) return 'SCORE2.mp3';
+  return 'SCORE.mp3';
+}
 
-    if (yesCount % 10 === 0) {
-      yesLog = [];
-      knnoCount++;
-      playFresh(audioKnnoSrc);
-      awardCoins(1);
-    } else {
-      playFresh(audioScoreYSrc);
-    }
-
-    updateSideDisplays();
-    updateCounters();
+function showComboText() {
+  if (comboCount >= 2) {
+    comboText.textContent = `x${comboCount} COMBO!`;
+    comboText.classList.add('active');
+  } else {
+    comboText.textContent = '';
+    comboText.classList.remove('active');
   }
+}
 
-  // wire buttons
-  btnNo.addEventListener('click', addNo);
-  btnYes.addEventListener('click', addYes);
+function startComboTimer() {
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(() => {
+    comboCount = 0;
+    showComboText();
+  }, comboTimeout);
+}
 
-  // toggle full log
-  let logOpen = false;
-  bottomBand.addEventListener('click', () => {
-    logOpen = !logOpen;
-    if (logOpen) {
-      logMenu.classList.add('open');
-      logMenu.setAttribute('aria-hidden', 'false');
-      setTimeout(() => fullLogEl.scrollTop = fullLogEl.scrollHeight, 50);
-    } else {
-      logMenu.classList.remove('open');
-      logMenu.setAttribute('aria-hidden', 'true');
-    }
-  });
+function handlePitchScoring() {
+  if (comboCount < comboMax) comboCount += 1;
 
-  // EXTRAS UI
-  function getRandomFromPool(poolKey) {
-    const arr = pools[poolKey];
-    if (!Array.isArray(arr) || arr.length === 0) return null;
-    return arr[Math.floor(Math.random() * arr.length)];
+  let extra = 0;
+  if (comboCount >= 2 && comboCount <= 5) extra = 1;
+  else if (comboCount > 5) extra = 2;
+
+  addScore(1 + extra);
+  maybeAddLoop();
+
+  playOnce(scoreSfxForCombo(comboCount));
+  showComboText();
+  startComboTimer();
+}
+
+// --- Progress bar ---
+function updateProgress(timestamp) {
+  if (!startTime) startTime = timestamp;
+
+  let elapsed = timestamp - startTime + pausedAt;
+  let progress = Math.max(0, 1 - elapsed / pitchDuration);
+  progressBar.style.width = (progress * 100) + '%';
+
+  if (progress > 0 && !paused) {
+    animationFrameId = requestAnimationFrame(updateProgress);
+  } else if (progress <= 0) {
+    progressBar.style.width = '0%';
+    if (!countdownInterval) startCountdown();
   }
+}
 
-  function createExtrasUI() {
-    extrasContainer.innerHTML = '';
-    // FIXED: Use extrasSlots.length so all slots (including added #6) render
-    for (let i = 0; i < extrasSlots.length; i++) {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'extra-item';
+function resetProgress() {
+  cancelAnimationFrame(animationFrameId);
+  startTime = null;
+  pausedAt = 0;
+  paused = false;
 
-      const span = document.createElement('div');
-      span.className = 'extra-text';
-      span.textContent = displayedExtras[i] || '...';
+  yesActive = false;
+  clearTimeout(yesTimeoutId);
 
-      const controls = document.createElement('div');
-      controls.style.display = 'flex';
-      controls.style.gap = '8px';
+  sbsBtn.classList.remove('paused');
+  sbsBtn.disabled = false;
+  pitchBtn.disabled = false;
+  pitchBtn.textContent = 'PITCH';
+  pitchBtn.classList.remove('yes-active');
+  progressBar.classList.remove('paused');
 
-      const doneBtn = document.createElement('button');
-      doneBtn.className = 'done-btn';
-      doneBtn.textContent = 'done';
-      doneBtn.addEventListener('click', () => {
-        if (!displayedExtras[i]) return;
-        const poolKey = extrasSlots[i];
-        if (poolKey === 1) extrasScore += 1;
-        else if (poolKey === 2) extrasScore += 3;
-        else if (poolKey === 3) extrasScore += 5;
-        awardCoins(poolKey === 3 ? 3 : 1);
-        playFresh(audioExtraSrc);
-        refillExtraSlot(i);
-        updateCounters();
-      });
+  dismissBtn.style.display = 'none';
+  buttonsContainer.classList.remove('sbs-active');
 
-      const skipBtn = document.createElement('button');
-      skipBtn.className = 'skip-btn';
-      skipBtn.textContent = 'skip';
-      skipBtn.addEventListener('click', () => {
-        if (!modifiers.noPenaltiesActive) {
-          extrasScore -= 3;
-          if (extrasScore < 0) extrasScore = 0;
-        }
-        playFresh(audioBoskSrc);
-        refillExtraSlot(i);
-        updateCounters();
-      });
+  stopCountdown();
 
-      controls.appendChild(doneBtn);
-      controls.appendChild(skipBtn);
+  progressBar.style.width = '100%';
+  animationFrameId = requestAnimationFrame(updateProgress);
+}
 
-      wrapper.appendChild(span);
-      wrapper.appendChild(controls);
+// --- Countdown ---
+function startCountdown() {
+  countdownCycle = 0;
+  countdown.style.display = 'block';
+  countdown.classList.add('show');
+  let timeLeft = countdownStartSeconds;
 
-      extrasContainer.appendChild(wrapper);
-      extrasSlotEls[i] = wrapper;
-    }
-  }
+  countdownInterval = setInterval(() => {
+    const seconds = Math.floor(timeLeft);
+    const milliseconds = Math.floor((timeLeft - seconds) * 1000);
+    countdown.textContent = `${seconds}.${milliseconds.toString().padStart(3,'0')}`;
+    timeLeft -= 0.01;
 
-  function refillExtraSlot(i) {
-    const poolKey = extrasSlots[i];
-    const pick = getRandomFromPool(poolKey);
-    displayedExtras[i] = pick ? pick : 'No extras loaded.';
-    const wrapper = extrasSlotEls[i];
-    if (wrapper) wrapper.querySelector('.extra-text').textContent = displayedExtras[i];
-  }
-
-  function initExtras() {
-    pools[1] = Array.isArray(window.extra1) ? window.extra1.slice() : [];
-    pools[2] = Array.isArray(window.extra2) ? window.extra2.slice() : [];
-    pools[3] = Array.isArray(window.extra3) ? window.extra3.slice() : [];
-
-    createExtrasUI();
-    for (let i = 0; i < extrasSlots.length; i++) refillExtraSlot(i);
-    updateCounters();
-  }
-
-  // Edit popup logic
-  let editing = null;
-  const yesEmoji = document.getElementById('yesEmoji');
-  const noEmoji = document.getElementById('noEmoji');
-
-  function openEdit(type) {
-    editing = type;
-    editModal.setAttribute('aria-hidden', 'false');
-    editInput.value = (type === 'no') ? noCount : yesCount;
-    editTitle.textContent = `Edit ${type.toUpperCase()} score`;
-    editInput.focus();
-    editInput.select();
-  }
-  function closeEdit() {
-    editModal.setAttribute('aria-hidden', 'true');
-    editing = null;
-  }
-  saveEditBtn.addEventListener('click', () => {
-    const v = parseInt(editInput.value);
-    if (!Number.isNaN(v) && v >= 0) {
-      if (editing === 'no') noCount = v;
-      if (editing === 'yes') yesCount = v;
-      updateCounters();
-    }
-    closeEdit();
-  });
-  cancelEditBtn.addEventListener('click', closeEdit);
-
-  yesEmoji.addEventListener('click', () => openEdit('yes'));
-  noEmoji.addEventListener('click', () => openEdit('no'));
-  yesEmoji.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit('yes'); }});
-  noEmoji.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEdit('no'); }});
-
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeEdit();
-  });
-  editModal.addEventListener('click', (evt) => {
-    if (evt.target === editModal) closeEdit();
-  });
-
-  // Periodic check to disable modifiers if expired
-  function checkModifiers() {
-    const now = Date.now();
-    if (modifiers.scoreMultiplierActive && now > modifiers.scoreMultiplierEnd) {
-      modifiers.scoreMultiplierActive = false;
-      updateCounters();
-    }
-    if (modifiers.noPenaltiesActive && now > modifiers.noPenaltiesEnd) {
-      modifiers.noPenaltiesActive = false;
-    }
-  }
-
-  // Expose functions to be called from shop.js
-  window.pitchTracker = {
-    initExtras,
-    refillExtraSlot,
-    updateCounters,
-    awardCoins,
-    addCoins: awardCoins,
-    getState: () => ({
-      noCount, yesCount, knnoCount, extrasScore, coins, displayedExtras,
-      modifiers
-    }),
-    activateScoreMultiplier(durationMs) {
-      modifiers.scoreMultiplierActive = true;
-      modifiers.scoreMultiplierEnd = Date.now() + durationMs;
-      updateCounters();
-    },
-    activateNoPenalties(durationMs) {
-      modifiers.noPenaltiesActive = true;
-      modifiers.noPenaltiesEnd = Date.now() + durationMs;
-    },
-    activateExtraSlot() {
-      if (!modifiers.extraSlotActive) {
-        modifiers.extraSlotActive = true;
-        extrasSlots.push(2); // add one more slot from pool 2
-        displayedExtras.push(null);
-        extrasSlotEls.push(null);
-        createExtrasUI();
-        refillExtraSlot(extrasSlots.length - 1);
-        updateCounters();
+    if (timeLeft <= 0) {
+      countdownCycle++;
+      if (countdownCycle >= countdownCyclesMax) {
+        stopCountdown();
+      } else {
+        timeLeft = countdownStartSeconds;
       }
     }
-  };
+  }, 10);
+}
 
-  // SHOP button and side menu logic (updated for new HTML structure)
-  const shopButton = document.querySelector('.shop-button');
-  const shopSideMenu = document.getElementById('shopSideMenu');
+function stopCountdown() {
+  clearInterval(countdownInterval);
+  countdownInterval = null;
+  countdown.classList.remove('show');
+  countdown.style.display = 'none';
+  countdown.textContent = '';
+}
 
-  let shopOpen = false;
+// --- YES state helpers ---
+function enterYesState() {
+  paused = true;
+  yesActive = true;
 
-  function openShop() {
-    shopSideMenu.classList.add('open');
-    shopOpen = true;
+  sbsBtn.classList.add('paused');
+  pitchBtn.classList.add('yes-active');
+  pitchBtn.textContent = 'YES';
+
+  dismissBtn.style.display = 'block';
+  buttonsContainer.classList.add('sbs-active');
+
+  progressBar.classList.add('paused');
+  cancelAnimationFrame(animationFrameId);
+  const computedWidth = parseFloat(progressBar.style.width) || 100;
+  pausedAt = pitchDuration * (1 - computedWidth / 100);
+
+  playOnce('SCOREY.mp3');
+}
+
+function exitYesStateResume() {
+  paused = false;
+  yesActive = false;
+
+  sbsBtn.classList.remove('paused');
+  pitchBtn.classList.remove('yes-active');
+  pitchBtn.textContent = 'PITCH';
+
+  dismissBtn.style.display = 'none';
+  buttonsContainer.classList.remove('sbs-active');
+
+  progressBar.classList.remove('paused');
+
+  startTime = null;
+  animationFrameId = requestAnimationFrame(updateProgress);
+}
+
+// --- Events panel slide ---
+eventsBtn.addEventListener('click', () => {
+  eventsPanel.classList.toggle('active');
+});
+
+// --- Events ---
+function renderEvents() {
+  eventsList.innerHTML = '';
+  events.forEach((ev, idx) => {
+    const li = document.createElement('li');
+    li.textContent = `${ev.name} | ${ev.icon}`;
+    if (ev.completed) li.classList.add('completed');
+    li.addEventListener('click', () => {
+      if (!ev.completed) {
+        ev.completed = true;
+        let points = 0;
+        if (ev.type === 1) points = 1;
+        else if (ev.type === 2) points = 3;
+        else if (ev.type === 3) points = 5;
+        loop += points;
+        updateCounters();
+        renderEvents();
+      }
+    });
+    eventsList.appendChild(li);
+  });
+}
+
+// --- Pitch/SBS/Dismiss ---
+pitchBtn.addEventListener('click', () => {
+  if (yesActive) {
+    dismissBtn.style.display = 'none';
+    buttonsContainer.classList.remove('sbs-active');
+
+    sbsBtn.disabled = true;
+    pitchBtn.disabled = true;
+
+    progressBar.classList.remove('paused');
+    progressBar.style.width = '100%';
+
+    playOnce(scoreSfxForCombo(comboCount));
+
+    yesTimeoutId = setTimeout(() => {
+      sbsBtn.disabled = false;
+      pitchBtn.disabled = false;
+      paused = false;
+      yesActive = false;
+      pitchBtn.classList.remove('yes-active');
+      pitchBtn.textContent = 'PITCH';
+      startTime = null;
+      animationFrameId = requestAnimationFrame(updateProgress);
+    }, yesCooldown);
+  } else {
+    handlePitchScoring();
+    resetProgress();
   }
+});
 
-  function closeShop() {
-    shopSideMenu.classList.remove('open');
-    shopOpen = false;
+sbsBtn.addEventListener('click', () => {
+  if (!yesActive) {
+    enterYesState();
+  } else {
+    addScore(-3);
+    exitYesStateResume();
   }
+});
 
-  shopButton.addEventListener('click', () => {
-    if (shopOpen) {
-      closeShop();
+dismissBtn.addEventListener('click', () => {
+  exitYesStateResume();
+});
+
+// --- POWER ---
+powerBtn.addEventListener("click", () => {
+  if (rouletteRunning) return;
+  powerOverlay.classList.add("active");
+  powerPanel.classList.add("active");
+});
+
+powerOverlay.addEventListener("click", () => {
+  powerOverlay.classList.remove("active");
+  powerPanel.classList.remove("active");
+});
+
+function resetPowerItems() {
+  powerItems.forEach((item, idx) => {
+    item.classList.remove('roulette-highlight');
+    if (obtainedItems.includes(idx)) {
+      item.classList.add('unlocked');
     } else {
-      openShop();
+      item.classList.remove('unlocked');
     }
   });
+}
 
-  document.addEventListener('click', (e) => {
-    if (!shopOpen) return;
-    if (!shopSideMenu.contains(e.target) && e.target !== shopButton) {
-      closeShop();
-    }
-  });
+commitBtn.addEventListener("click", () => {
+  if (loop < POWER_COST || rouletteRunning) return;
 
-  // Initialization
-  initExtras();
-  updateSideDisplays();
+  loop -= POWER_COST;
   updateCounters();
 
-  // Check modifiers every second
-  setInterval(() => {
-    checkModifiers();
-  }, 1000);
+  rouletteRunning = true;
+  commitBtn.disabled = true;
+  commitBtn.textContent = "COMMITTING...";
+
+  let availableIndices = Array.from(powerItems.keys()).filter(idx => !obtainedItems.includes(idx));
+  if (availableIndices.length === 0) {
+    commitBtn.textContent = "All items obtained!";
+    rouletteRunning = false;
+    commitBtn.disabled = false;
+    return;
+  }
+
+  if (rouletteAudio) {
+    rouletteAudio.currentTime = 0;
+    rouletteAudio.play();
+  }
+
+  let finalIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+  let animationCount = 30 + Math.floor(Math.random() * 20);
+  let currentStep = 0;
+
+  const roulette = setInterval(() => {
+    resetPowerItems();
+    let highlightIndex = currentStep % powerItems.length;
+    powerItems[highlightIndex].classList.add('roulette-highlight');
+
+    currentStep++;
+    if (currentStep > animationCount) {
+      clearInterval(roulette);
+      resetPowerItems();
+      powerItems[finalIndex].classList.add('roulette-highlight');
+
+      obtainedItems.push(finalIndex);
+      rouletteRunning = false;
+      commitBtn.disabled = false;
+      commitBtn.textContent = "COMMIT 1";
+      if (rouletteAudio) rouletteAudio.pause();
+    }
+  }, 100);
 });
+
+// --- Events Loader ---
+function loadEventsFromList() {
+  if (typeof initialEvents !== 'undefined' && Array.isArray(initialEvents)) {
+    events = initialEvents.map(ev => ({ ...ev, completed: false }));
+  }
+}
+
+// --- RESET ---
+resetBtn.addEventListener('click', () => {
+  if (confirm("Are you sure you want to reset all progress?")) {
+    score = 0;
+    loop = 0;
+    obtainedItems = [];
+    resetPowerItems();
+    loadEventsFromList();
+    renderEvents();
+    updateCounters();
+    resetProgress();
+  }
+});
+
+// --- INIT ---
+updateCounters();
+window.onload = () => {
+  loadEventsFromList();  // Load events from LIST.js
+  resetProgress();
+  renderEvents();
+};
